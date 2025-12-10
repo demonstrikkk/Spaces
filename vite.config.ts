@@ -1,0 +1,49 @@
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
+import { resolve } from 'path';
+import fs from 'fs';
+
+const copyExtensionFiles = () => {
+  return {
+    name: 'copy-extension-files',
+    closeBundle: () => {
+      const distDir = resolve(__dirname, 'dist');
+      const extDir = resolve(__dirname, 'extension');
+
+      if (!fs.existsSync(distDir)) return;
+
+      // Copy background.js
+      if (fs.existsSync(resolve(extDir, 'background.js'))) {
+        fs.copyFileSync(resolve(extDir, 'background.js'), resolve(distDir, 'background.js'));
+      }
+
+      // Read and copy manifest.json with path adjustments
+      const manifestPath = resolve(extDir, 'manifest.json');
+      if (fs.existsSync(manifestPath)) {
+        const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+        // Ensure popup points to correctly built file
+        manifest.action.default_popup = 'extension/popup.html';
+        fs.writeFileSync(resolve(distDir, 'manifest.json'), JSON.stringify(manifest, null, 2));
+      }
+
+      console.log('Extension files copied to dist/');
+    }
+  };
+};
+
+export default defineConfig({
+  plugins: [react(), tailwindcss(), copyExtensionFiles()],
+  build: {
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+        popup: resolve(__dirname, 'extension/popup.html'),
+      },
+    },
+  },
+  server: {
+    port: 5173,
+    host: true
+  },
+});
