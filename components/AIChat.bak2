@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Node } from '../types';
-import { chatWithRAG, summarizeChatSession, compareSpaces, generateSpaceMemory } from '../services/enhancedGeminiService';
-import { generateTags } from '../services/geminiService';
-import { getChatHistories, saveChatHistory, deleteChatHistory, createNode, ChatHistory, getSpaces, getNodesForSpace } from '../services/dataService';
-import { Send, Sparkles, Clock, Trash2, Plus, BookOpen, Zap, Copy, Check, Globe2, X, Brain, RefreshCw } from 'lucide-react';
+import { chatWithRAG, summarizeChatSession, compareSpaces } from '../services/enhancedGeminiService';
+import { getChatHistories, saveChatHistory, deleteChatHistory, createNode, ChatHistory, getSpaces } from '../services/dataService';
+import { Send, Sparkles, Clock, Trash2, Plus, BookOpen, Zap, Copy, Check, Globe2, X } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -19,7 +18,6 @@ interface Message {
   content: string;
   timestamp: number;
   sources?: string[];
-  matchedTitles?: string[];
 }
 
 const AIChat: React.FC<AIChatProps> = ({ spaceId, spaceName, nodes, onClose }) => {
@@ -35,10 +33,7 @@ const AIChat: React.FC<AIChatProps> = ({ spaceId, spaceName, nodes, onClose }) =
   const [multiSpaceMode, setMultiSpaceMode] = useState(false);
   const [selectedSpace2, setSelectedSpace2] = useState<string | null>(null);
   const [allSpaces, setAllSpaces] = useState<any[]>([]);
-  const [space2Nodes, setSpace2Nodes] = useState<Node[]>([]);
   const [copied, setCopied] = useState(false);
-  const [spaceMemory, setSpaceMemory] = useState<string>('');
-  const [memoryLoading, setMemoryLoading] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -47,25 +42,7 @@ const AIChat: React.FC<AIChatProps> = ({ spaceId, spaceName, nodes, onClose }) =
   useEffect(() => {
     loadChatHistories();
     loadAllSpaces();
-    // Generate memory for current space
-    initializeSpaceMemory();
   }, [spaceId]);
-
-  // Load second space nodes when selected
-  useEffect(() => {
-    if (selectedSpace2) {
-      loadSpace2Nodes();
-    }
-  }, [selectedSpace2]);
-
-  const initializeSpaceMemory = async () => {
-    if (nodes.length > 0) {
-      setMemoryLoading(true);
-      const memory = await generateSpaceMemory(nodes, spaceName);
-      setSpaceMemory(memory);
-      setMemoryLoading(false);
-    }
-  };
 
   const loadChatHistories = async () => {
     const histories = await getChatHistories(spaceId);
@@ -75,13 +52,6 @@ const AIChat: React.FC<AIChatProps> = ({ spaceId, spaceName, nodes, onClose }) =
   const loadAllSpaces = async () => {
     const spaces = await getSpaces();
     setAllSpaces(spaces.filter(s => s.id !== spaceId));
-  };
-
-  const loadSpace2Nodes = async () => {
-    if (selectedSpace2) {
-      const nodesData = await getNodesForSpace(selectedSpace2);
-      setSpace2Nodes(nodesData);
-    }
   };
 
   // Scroll to bottom
@@ -110,34 +80,26 @@ const AIChat: React.FC<AIChatProps> = ({ spaceId, spaceName, nodes, onClose }) =
     try {
       let response: string;
       let sources: string[] = [];
-      let matchedTitles: string[] = [];
 
       if (multiSpaceMode && selectedSpace2) {
-        // Multi-agent mode with both spaces' memories loaded
+        // Multi-agent mode
         const space2 = allSpaces.find(s => s.id === selectedSpace2);
+        // In real implementation, you'd load space2 nodes
+        const space2Nodes: Node[] = []; // Load these
         response = await compareSpaces(nodes, space2Nodes, spaceName, space2?.name || 'Space 2', input);
-        sources = [`${spaceName}`, `${space2?.name}`];
+        sources = [`${spaceName} & ${space2?.name}`];
       } else {
-        // Regular chat with RAG and one-shot learning memory
-        const result = await chatWithRAG(
-          input, 
-          useRAG ? nodes : [], 
-          messages, 
-          useGoogle,
-          spaceName,
-          spaceMemory
-        );
+        // Regular chat with RAG
+        const result = await chatWithRAG(input, useRAG ? nodes : [], messages, useGoogle);
         response = result.response;
         sources = result.sources;
-        matchedTitles = result.matchedTitles || [];
       }
 
       const aiMessage: Message = {
         role: 'model',
         content: response,
         timestamp: Date.now(),
-        sources,
-        matchedTitles
+        sources
       };
 
       setMessages(prev => [...prev, aiMessage]);
@@ -185,7 +147,6 @@ const AIChat: React.FC<AIChatProps> = ({ spaceId, spaceName, nodes, onClose }) =
       const summary = await summarizeChatSession(messages);
       
       // Save as note
-      const autoTags = await generateTags(`Chat Summary: ${messages[0]?.content.substring(0, 30)}`, summary);
       await createNode({
         id: Date.now().toString(),
         spaceId,
@@ -193,7 +154,7 @@ const AIChat: React.FC<AIChatProps> = ({ spaceId, spaceName, nodes, onClose }) =
         title: `Chat Summary: ${messages[0]?.content.substring(0, 30)}...`,
         summary,
         content: summary + '\n\n---\n\n' + messages.map(m => `**${m.role}:** ${m.content}`).join('\n\n'),
-        tags: ['AI Chat', 'Summary', ...autoTags],
+        tags: ['AI Chat', 'Summary'],
         createdAt: new Date().toISOString(),
         status: 'new',
         pinned: false,
@@ -242,20 +203,19 @@ const AIChat: React.FC<AIChatProps> = ({ spaceId, spaceName, nodes, onClose }) =
       <div className="glass-dark border-b px-6 py-4" style={{ borderColor: 'var(--color-border-gold)' }}>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'var(--gradient-gold)', boxShadow: 'var(--shadow-gold)' }}>
-              <Sparkles className="w-5 h-5" style={{ color: 'var(--color-background)' }} />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center shadow-lg">
+              <Sparkles className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 className="text-lg font-bold" style={{ color: 'var(--color-primary)' }}>AI Assistant</h3>
-              <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{spaceName}</p>
+              <h3 className="text-lg font-bold text-slate-900">AI Assistant</h3>
+              <p className="text-xs text-slate-500">{spaceName}</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowHistory(!showHistory)}
-              className="px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 flex items-center gap-2 hover:scale-105"
-              style={{ background: 'var(--color-surface-elevated)', color: 'var(--color-text-light)' }}
+              className="px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium text-slate-700 transition-colors flex items-center gap-2"
             >
               <Clock className="w-4 h-4" />
               History ({chatHistories.length})
@@ -265,8 +225,7 @@ const AIChat: React.FC<AIChatProps> = ({ spaceId, spaceName, nodes, onClose }) =
               <button
                 onClick={handleSummarize}
                 disabled={loading}
-                className="px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 flex items-center gap-2 disabled:opacity-50 hover:scale-105"
-                style={{ background: 'var(--gradient-gold)', color: 'var(--color-background)', boxShadow: 'var(--shadow-gold)' }}
+                className="px-3 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2 disabled:opacity-50"
               >
                 <BookOpen className="w-4 h-4" />
                 Summarize & Save
@@ -276,10 +235,9 @@ const AIChat: React.FC<AIChatProps> = ({ spaceId, spaceName, nodes, onClose }) =
             {onClose && (
               <button
                 onClick={onClose}
-                className="p-2 rounded-lg transition-all duration-300 hover:scale-110"
-                style={{ background: 'transparent' }}
+                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
               >
-                <X className="w-5 h-5" style={{ color: 'var(--color-text-muted)' }} />
+                <X className="w-5 h-5 text-slate-500" />
               </button>
             )}
           </div>
@@ -292,44 +250,22 @@ const AIChat: React.FC<AIChatProps> = ({ spaceId, spaceName, nodes, onClose }) =
               type="checkbox"
               checked={useRAG}
               onChange={(e) => setUseRAG(e.target.checked)}
-              className="w-4 h-4 rounded"
-              style={{ accentColor: 'var(--color-primary)' }}
+              className="w-4 h-4 text-teal-500 rounded focus:ring-teal-500"
             />
-            <span className="text-sm flex items-center gap-1" style={{ color: 'var(--color-text-light)' }}>
+            <span className="text-sm text-slate-700 flex items-center gap-1">
               <BookOpen className="w-4 h-4" />
               Use My Knowledge ({nodes.length} items)
             </span>
           </label>
-
-          {/* Memory Status Indicator */}
-          <div className="flex items-center gap-2 px-3 py-1 rounded-full" style={{ background: 'rgba(212, 175, 55, 0.15)' }}>
-            {memoryLoading ? (
-              <>
-                <RefreshCw className="w-3 h-3 animate-spin" style={{ color: 'var(--color-primary)' }} />
-                <span className="text-xs" style={{ color: 'var(--color-primary)' }}>Learning...</span>
-              </>
-            ) : spaceMemory ? (
-              <>
-                <Brain className="w-3 h-3" style={{ color: 'var(--color-primary)' }} />
-                <span className="text-xs" style={{ color: 'var(--color-primary)' }}>Memory Active</span>
-              </>
-            ) : (
-              <>
-                <Brain className="w-3 h-3" style={{ color: 'var(--color-text-muted)' }} />
-                <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>No Memory</span>
-              </>
-            )}
-          </div>
 
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
               checked={useGoogle}
               onChange={(e) => setUseGoogle(e.target.checked)}
-              className="w-4 h-4 rounded"
-              style={{ accentColor: 'var(--color-primary)' }}
+              className="w-4 h-4 text-teal-500 rounded focus:ring-teal-500"
             />
-            <span className="text-sm flex items-center gap-1" style={{ color: 'var(--color-text-light)' }}>
+            <span className="text-sm text-slate-700 flex items-center gap-1">
               <Globe2 className="w-4 h-4" />
               Search Web
             </span>
@@ -340,12 +276,11 @@ const AIChat: React.FC<AIChatProps> = ({ spaceId, spaceName, nodes, onClose }) =
               type="checkbox"
               checked={multiSpaceMode}
               onChange={(e) => setMultiSpaceMode(e.target.checked)}
-              className="w-4 h-4 rounded"
-              style={{ accentColor: 'var(--color-primary)' }}
+              className="w-4 h-4 text-teal-500 rounded focus:ring-teal-500"
             />
-            <span className="text-sm flex items-center gap-1" style={{ color: 'var(--color-text-light)' }}>
+            <span className="text-sm text-slate-700 flex items-center gap-1">
               <Zap className="w-4 h-4" />
-              Multi-Space Mode
+              Compare Spaces
             </span>
           </label>
 
@@ -353,20 +288,13 @@ const AIChat: React.FC<AIChatProps> = ({ spaceId, spaceName, nodes, onClose }) =
             <select
               value={selectedSpace2 || ''}
               onChange={(e) => setSelectedSpace2(e.target.value)}
-              className="px-3 py-1 border rounded-lg text-sm focus:outline-none transition-all"
-              style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border-dark)', color: 'var(--color-text-light)' }}
+              className="px-3 py-1 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500"
             >
               <option value="">Select space to compare...</option>
               {allSpaces.map(space => (
                 <option key={space.id} value={space.id}>{space.name}</option>
               ))}
             </select>
-          )}
-
-          {multiSpaceMode && selectedSpace2 && (
-            <span className="text-xs px-2 py-1 rounded-full" style={{ background: 'rgba(139, 92, 246, 0.2)', color: '#a78bfa' }}>
-              + {space2Nodes.length} items from {allSpaces.find(s => s.id === selectedSpace2)?.name}
-            </span>
           )}
         </div>
       </div>
@@ -378,15 +306,13 @@ const AIChat: React.FC<AIChatProps> = ({ spaceId, spaceName, nodes, onClose }) =
             initial={{ x: -300, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -300, opacity: 0 }}
-            className="absolute left-0 top-0 bottom-0 w-80 border-r shadow-xl z-10"
-            style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border-gold)' }}
+            className="absolute left-0 top-0 bottom-0 w-80 bg-white border-r border-slate-200 shadow-xl z-10"
           >
-            <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: 'var(--color-border-dark)' }}>
-              <h3 className="font-bold" style={{ color: 'var(--color-text-light)' }}>Chat History</h3>
+            <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+              <h3 className="font-bold text-slate-900">Chat History</h3>
               <button
                 onClick={() => setShowHistory(false)}
-                className="p-1 rounded-lg transition-all duration-300"
-                style={{ background: 'transparent' }}
+                className="p-1 hover:bg-slate-100 rounded-lg"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -394,22 +320,20 @@ const AIChat: React.FC<AIChatProps> = ({ spaceId, spaceName, nodes, onClose }) =
             
             <div className="overflow-y-auto h-[calc(100%-140px)]">
               {chatHistories.length === 0 ? (
-                <div className="p-8 text-center text-sm" style={{ color: 'var(--color-text-muted)' }}>
+                <div className="p-8 text-center text-slate-500 text-sm">
                   No chat history yet
                 </div>
               ) : (
                 chatHistories.map(history => (
                   <div
                     key={history.id}
-                    className="p-4 border-b cursor-pointer transition-all duration-300"
-                    style={{
-                      borderColor: 'var(--color-border-dark)',
-                      background: activeHistoryId === history.id ? 'rgba(212, 175, 55, 0.15)' : 'transparent'
-                    }}
+                    className={`p-4 border-b border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors ${
+                      activeHistoryId === history.id ? 'bg-teal-50' : ''
+                    }`}
                     onClick={() => handleLoadHistory(history)}
                   >
                     <div className="flex items-start justify-between mb-2">
-                      <h4 className="font-medium text-sm line-clamp-2 flex-1" style={{ color: 'var(--color-text-light)' }}>
+                      <h4 className="font-medium text-sm text-slate-900 line-clamp-2 flex-1">
                         {history.title}
                       </h4>
                       <button
@@ -419,10 +343,10 @@ const AIChat: React.FC<AIChatProps> = ({ spaceId, spaceName, nodes, onClose }) =
                         }}
                         className="p-1 hover:bg-white rounded-lg"
                       >
-                        <Trash2 className="w-3.5 h-3.5 transition-colors" style={{ color: 'var(--color-text-muted)' }} />
+                        <Trash2 className="w-3.5 h-3.5 text-slate-400 hover:text-red-500" />
                       </button>
                     </div>
-                    <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                    <p className="text-xs text-slate-500">
                       {new Date(history.updatedAt).toLocaleString()} · {history.messages.length} messages
                     </p>
                   </div>
@@ -430,11 +354,10 @@ const AIChat: React.FC<AIChatProps> = ({ spaceId, spaceName, nodes, onClose }) =
               )}
             </div>
 
-            <div className="absolute bottom-0 left-0 right-0 p-4 border-t" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border-dark)' }}>
+            <div className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t border-slate-200">
               <button
                 onClick={handleNewChat}
-                className="w-full px-4 py-2 rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-2 hover:scale-105"
-                style={{ background: 'var(--gradient-gold)', color: 'var(--color-background)', boxShadow: 'var(--shadow-gold)' }}
+                className="w-full px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
               >
                 <Plus className="w-4 h-4" />
                 New Chat
@@ -448,11 +371,11 @@ const AIChat: React.FC<AIChatProps> = ({ spaceId, spaceName, nodes, onClose }) =
       <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
         {messages.length === 0 && (
           <div className="text-center py-12">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center animate-pulse-gold" style={{ background: 'var(--gradient-gold)', boxShadow: 'var(--shadow-gold-lg)' }}>
+            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center shadow-xl">
               <Sparkles className="w-8 h-8 text-white" />
             </div>
-            <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--color-primary)' }}>AI Assistant Ready</h3>
-            <p className="max-w-md mx-auto" style={{ color: 'var(--color-text-muted)' }}>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">AI Assistant Ready</h3>
+            <p className="text-slate-600 max-w-md mx-auto">
               Ask me anything about your saved content! I can search through {nodes.length} items in this space
               {useGoogle && ', search the web'}
               {multiSpaceMode && ', and compare with other spaces'}.
@@ -460,47 +383,31 @@ const AIChat: React.FC<AIChatProps> = ({ spaceId, spaceName, nodes, onClose }) =
             <div className="mt-6 grid grid-cols-2 gap-3 max-w-2xl mx-auto">
               <button
                 onClick={() => setInput('What are the main themes in my saved content?')}
-                className="p-4 rounded-xl text-left transition-all group hover:scale-105"
-                style={{ 
-                  background: 'var(--color-surface)',
-                  border: '1px solid var(--color-border-dark)'
-                }}
+                className="p-4 bg-white border border-slate-200 rounded-xl text-left hover:border-teal-500 hover:shadow-md transition-all group"
               >
-                <p className="text-sm font-medium transition-colors group-hover:text-[var(--color-primary)]" style={{ color: 'var(--color-text-light)' }}>📊 Summarize my knowledge</p>
-                <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>Get an overview</p>
+                <p className="text-sm font-medium text-slate-900 group-hover:text-teal-600">Summarize my knowledge</p>
+                <p className="text-xs text-slate-500 mt-1">Get an overview</p>
               </button>
               <button
                 onClick={() => setInput('Find connections between my saved items')}
-                className="p-4 rounded-xl text-left transition-all group hover:scale-105"
-                style={{ 
-                  background: 'var(--color-surface)',
-                  border: '1px solid var(--color-border-dark)'
-                }}
+                className="p-4 bg-white border border-slate-200 rounded-xl text-left hover:border-teal-500 hover:shadow-md transition-all group"
               >
-                <p className="text-sm font-medium transition-colors group-hover:text-[var(--color-primary)]" style={{ color: 'var(--color-text-light)' }}>🔗 Find connections</p>
-                <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>Discover relationships</p>
+                <p className="text-sm font-medium text-slate-900 group-hover:text-teal-600">Find connections</p>
+                <p className="text-xs text-slate-500 mt-1">Discover relationships</p>
               </button>
               <button
                 onClick={() => setInput('What should I research next based on what I have?')}
-                className="p-4 rounded-xl text-left transition-all group hover:scale-105"
-                style={{ 
-                  background: 'var(--color-surface)',
-                  border: '1px solid var(--color-border-dark)'
-                }}
+                className="p-4 bg-white border border-slate-200 rounded-xl text-left hover:border-teal-500 hover:shadow-md transition-all group"
               >
-                <p className="text-sm font-medium transition-colors group-hover:text-[var(--color-primary)]" style={{ color: 'var(--color-text-light)' }}>🚀 Suggest next steps</p>
-                <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>Get recommendations</p>
+                <p className="text-sm font-medium text-slate-900 group-hover:text-teal-600">Suggest next steps</p>
+                <p className="text-xs text-slate-500 mt-1">Get recommendations</p>
               </button>
               <button
                 onClick={() => setInput('Explain this topic: [your topic]')}
-                className="p-4 rounded-xl text-left transition-all group hover:scale-105"
-                style={{ 
-                  background: 'var(--color-surface)',
-                  border: '1px solid var(--color-border-dark)'
-                }}
+                className="p-4 bg-white border border-slate-200 rounded-xl text-left hover:border-teal-500 hover:shadow-md transition-all group"
               >
-                <p className="text-sm font-medium transition-colors group-hover:text-[var(--color-primary)]" style={{ color: 'var(--color-text-light)' }}>🔍 Deep dive</p>
-                <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>Explore a topic</p>
+                <p className="text-sm font-medium text-slate-900 group-hover:text-teal-600">Deep dive</p>
+                <p className="text-xs text-slate-500 mt-1">Explore a topic</p>
               </button>
             </div>
           </div>
@@ -514,11 +421,11 @@ const AIChat: React.FC<AIChatProps> = ({ spaceId, spaceName, nodes, onClose }) =
             className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             <div className={`max-w-[80%] ${msg.role === 'user' ? 'order-2' : 'order-1'}`}>
-              <div className={`rounded-2xl px-5 py-3 border transition-all duration-300`}
-                style={msg.role === 'user' 
-                  ? { background: 'var(--gradient-gold)', color: 'var(--color-background)', boxShadow: 'var(--shadow-gold)', borderColor: 'var(--color-border-gold)' }
-                  : { background: 'var(--color-surface)', color: 'var(--color-text-light)', borderColor: 'var(--color-border-dark)' }
-                }>
+              <div className={`rounded-2xl px-5 py-3 ${
+                msg.role === 'user'
+                  ? 'bg-teal-500 text-white'
+                  : 'bg-white border border-slate-200 text-slate-900'
+              }`}>
                 <div className="prose prose-sm max-w-none">
                   <ReactMarkdown>
                     {msg.content}
@@ -565,9 +472,9 @@ const AIChat: React.FC<AIChatProps> = ({ spaceId, spaceName, nodes, onClose }) =
           <div className="flex justify-start">
             <div className="bg-white border border-slate-200 rounded-2xl px-5 py-3">
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full animate-bounce" style={{ animationDelay: '0ms', background: 'var(--color-primary)' }} />
-                <div className="w-2 h-2 rounded-full animate-bounce" style={{ animationDelay: '150ms', background: 'var(--color-primary)' }} />
-                <div className="w-2 h-2 rounded-full animate-bounce" style={{ animationDelay: '300ms', background: 'var(--color-primary)' }} />
+                <div className="w-2 h-2 bg-teal-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <div className="w-2 h-2 bg-teal-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <div className="w-2 h-2 bg-teal-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
               </div>
             </div>
           </div>
@@ -577,7 +484,7 @@ const AIChat: React.FC<AIChatProps> = ({ spaceId, spaceName, nodes, onClose }) =
       </div>
 
       {/* Input */}
-      <div className=" border-t border-slate-200 px-6 py-4">
+      <div className="bg-white border-t border-slate-200 px-6 py-4">
         <div className="flex items-end gap-3">
           <div className="flex-1 relative">
             <textarea
@@ -591,8 +498,7 @@ const AIChat: React.FC<AIChatProps> = ({ spaceId, spaceName, nodes, onClose }) =
                 }
               }}
               placeholder={`Ask me anything about ${spaceName}...`}
-              className="w-full px-4 py-3 border rounded-xl resize-none focus:outline-none transition-all"
-              style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border-dark)', color: 'var(--color-text-light)' }}
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-slate-900 placeholder-slate-400"
               rows={3}
               disabled={loading}
             />
@@ -605,8 +511,7 @@ const AIChat: React.FC<AIChatProps> = ({ spaceId, spaceName, nodes, onClose }) =
           <button
             onClick={handleSend}
             disabled={!input.trim() || loading}
-            className="px-6 py-3 rounded-xl font-medium transition-all duration-300 flex items-center gap-2 disabled:cursor-not-allowed h-[76px] hover:scale-105 disabled:opacity-50"
-            style={{ background: 'var(--gradient-gold)', color: 'var(--color-background)', boxShadow: 'var(--shadow-gold)' }}
+            className="px-6 py-3 bg-teal-500 hover:bg-teal-600 disabled:bg-slate-300 text-white rounded-xl font-medium transition-all flex items-center gap-2 disabled:cursor-not-allowed h-[76px]"
           >
             <Send className="w-5 h-5" />
             Send

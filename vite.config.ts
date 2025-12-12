@@ -10,12 +10,23 @@ const copyExtensionFiles = () => {
     closeBundle: () => {
       const distDir = resolve(__dirname, 'dist');
       const extDir = resolve(__dirname, 'extension');
+      const distExtDir = resolve(distDir, 'extension');
 
       if (!fs.existsSync(distDir)) return;
+      
+      // Create extension directory in dist
+      if (!fs.existsSync(distExtDir)) {
+        fs.mkdirSync(distExtDir, { recursive: true });
+      }
 
-      // Copy background.js
+      // Copy background.js to extension folder
       if (fs.existsSync(resolve(extDir, 'background.js'))) {
-        fs.copyFileSync(resolve(extDir, 'background.js'), resolve(distDir, 'background.js'));
+        fs.copyFileSync(resolve(extDir, 'background.js'), resolve(distExtDir, 'background.js'));
+      }
+
+      // Copy icon
+      if (fs.existsSync(resolve(extDir, 'icon.svg'))) {
+        fs.copyFileSync(resolve(extDir, 'icon.svg'), resolve(distExtDir, 'icon.svg'));
       }
 
       // Read and copy manifest.json with path adjustments
@@ -27,7 +38,8 @@ const copyExtensionFiles = () => {
         fs.writeFileSync(resolve(distDir, 'manifest.json'), JSON.stringify(manifest, null, 2));
       }
 
-      console.log('Extension files copied to dist/');
+      console.log('✅ Extension files copied to dist/');
+      console.log('📦 Load the extension from the dist/ folder in Chrome');
     }
   };
 };

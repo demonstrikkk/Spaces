@@ -61,9 +61,9 @@ function App() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--gradient-dark)' }}>
                 <div className="flex flex-col items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center animate-pulse shadow-glow">
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center animate-pulse-gold" style={{ background: 'var(--gradient-gold)', boxShadow: 'var(--shadow-gold)' }}>
                         <Zap className="w-6 h-6 text-white fill-current" />
                     </div>
                     <p className="text-slate-400 text-sm font-mono animate-pulse">Initializing Neural Link...</p>
@@ -75,23 +75,23 @@ function App() {
     const activeSpace = spaces.find(s => s.id === activeSpaceId);
 
     return (
-        <div className="min-h-screen font-sans bg-slate-950 text-slate-100 selection:bg-indigo-500/30">
+        <div className="min-h-screen font-sans selection:bg-yellow-500/20" style={{ background: 'var(--color-background)', color: 'var(--color-text-light)' }}>
             {/* Background Effects */}
             <div className="fixed inset-0 pointer-events-none overflow-hidden">
-                <div className="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] bg-purple-600/10 rounded-full blur-[120px] animate-pulse" />
-                <div className="absolute bottom-[-10%] left-[-5%] w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '2s' }} />
+                <div className="absolute top-[-10%] right-[-5%] w-[700px] h-[700px] rounded-full blur-[150px] animate-pulse" style={{ background: 'radial-gradient(circle, rgba(212,175,55,0.15) 0%, transparent 70%)' }} />
+                <div className="absolute bottom-[-10%] left-[-5%] w-[700px] h-[700px] rounded-full blur-[150px] animate-pulse" style={{ background: 'radial-gradient(circle, rgba(201,169,97,0.12) 0%, transparent 70%)', animationDelay: '2s' }} />
             </div>
 
             {/* Navbar */}
-            <nav className="fixed top-0 left-0 right-0 h-20 z-30 bg-slate-950/80 backdrop-blur-xl border-b border-white/5">
+            <nav className="fixed top-0 left-0 right-0 h-20 z-30 glass-dark backdrop-blur-xl border-b" style={{ borderColor: 'var(--color-border-gold)' }}>
                 <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 group cursor-pointer hover:scale-105 transition-transform">
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center group cursor-pointer hover:scale-110 transition-all duration-300" style={{ background: 'var(--gradient-gold)', boxShadow: 'var(--shadow-gold)' }}>
                             <Zap className="w-5 h-5 text-white fill-current group-hover:rotate-12 transition-transform" />
                         </div>
                         <div className="flex flex-col">
-                            <span className="font-heading font-bold text-xl text-white leading-none">Spaces</span>
-                            <span className="text-[10px] text-indigo-400 font-mono tracking-widest uppercase">Second Brain</span>
+                            <span className="font-heading font-bold text-xl leading-none text-gold-glow" style={{ color: 'var(--color-primary)' }}>Spaces</span>
+                            <span className="text-[10px] font-mono tracking-widest uppercase" style={{ color: 'var(--color-secondary)' }}>Second Brain</span>
                         </div>
                     </div>
 
@@ -124,12 +124,12 @@ function App() {
                             transition={{ duration: 0.6 }}
                         >
                             <h1 className="text-5xl md:text-7xl font-heading font-bold mb-6 tracking-tight">
-                                <span className="block text-slate-200 mb-2">Curate Your</span>
-                                <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 animate-shine bg-[length:200%_auto]">
+                                <span className="block mb-2" style={{ color: 'var(--color-text-light)' }}>Curate Your</span>
+                                <span className="bg-clip-text text-transparent animate-shimmer" style={{ backgroundImage: 'var(--gradient-gold)', WebkitBackgroundClip: 'text', backgroundSize: '200% auto' }}>
                                     Digital Universe
                                 </span>
                             </h1>
-                            <p className="text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed">
+                            <p className="text-lg max-w-2xl mx-auto leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
                                 Capture, organize, and synthesize your knowledge with the power of Gemini 2.0.
                                 Your personal knowledge graph, automated.
                             </p>
@@ -160,10 +160,10 @@ function App() {
                         }}
                         className="h-[280px] rounded-3xl border-2 border-dashed border-slate-800 hover:border-indigo-500/50 bg-slate-900/20 hover:bg-slate-900/40 flex flex-col items-center justify-center cursor-pointer transition-all group"
                     >
-                        <div className="w-16 h-16 rounded-full bg-slate-800 group-hover:bg-indigo-500/20 flex items-center justify-center mb-4 transition-colors">
-                            <Plus className="w-8 h-8 text-slate-600 group-hover:text-indigo-400" />
+                        <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-all duration-300 group-hover:scale-110 group-hover:animate-pulse-gold" style={{ background: 'var(--color-surface-elevated)' }}>
+                            <Plus className="w-8 h-8 transition-colors" style={{ color: 'var(--color-text-muted)' }} />
                         </div>
-                        <span className="font-heading font-bold text-lg text-slate-500 group-hover:text-slate-300">Create New Space</span>
+                        <span className="font-heading font-bold text-lg transition-colors" style={{ color: 'var(--color-text-muted)' }}>Create New Space</span>
                     </motion.div>
 
                     {/* Existing Spaces */}

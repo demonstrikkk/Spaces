@@ -1,85 +1,236 @@
 import React from 'react';
 import { Node, NodeType } from '../types';
-import { FileText, Link as LinkIcon, Image, Film, MessageCircle, Twitter, Pin, ExternalLink } from 'lucide-react';
+import { FileText, Link as LinkIcon, Image, Film, MessageCircle, Twitter, Pin, ExternalLink, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface ContentCardProps {
   node: Node;
   onClick?: () => void;
+  index?: number;
 }
 
 const TypeIcon = ({ type }: { type: NodeType }) => {
+  const iconClasses = "w-4 h-4";
   switch (type) {
-    case NodeType.VIDEO: return <Film className="w-4 h-4 text-rose-400" />;
-    case NodeType.LINK: return <LinkIcon className="w-4 h-4 text-blue-400" />;
-    case NodeType.IMAGE: return <Image className="w-4 h-4 text-purple-400" />;
-    case NodeType.TWEET: return <Twitter className="w-4 h-4 text-sky-400" />;
-    case NodeType.CHAT_LOG: return <MessageCircle className="w-4 h-4 text-emerald-400" />;
-    default: return <FileText className="w-4 h-4 text-slate-400" />;
+    case NodeType.VIDEO: return <Film className={iconClasses} style={{ color: '#f43f5e' }} />;
+    case NodeType.LINK: return <LinkIcon className={iconClasses} style={{ color: '#3b82f6' }} />;
+    case NodeType.IMAGE: return <Image className={iconClasses} style={{ color: '#a855f7' }} />;
+    case NodeType.TWEET: return <Twitter className={iconClasses} style={{ color: '#0ea5e9' }} />;
+    case NodeType.CHAT_LOG: return <MessageCircle className={iconClasses} style={{ color: '#10b981' }} />;
+    case NodeType.ARTICLE: return <FileText className={iconClasses} style={{ color: '#f59e0b' }} />;
+    default: return <FileText className={iconClasses} style={{ color: 'var(--color-text-muted)' }} />;
   }
 };
 
-const ContentCard: React.FC<ContentCardProps> = ({ node, onClick }) => {
+const getTypeColor = (type: NodeType): { gradient: string; glow: string; border: string } => {
+  const colors: Record<string, { gradient: string; glow: string; border: string }> = {
+    VIDEO: { 
+      gradient: 'linear-gradient(135deg, rgba(244, 63, 94, 0.15) 0%, rgba(42, 36, 33, 0.9) 100%)',
+      glow: 'rgba(244, 63, 94, 0.3)',
+      border: 'rgba(244, 63, 94, 0.3)'
+    },
+    LINK: { 
+      gradient: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(42, 36, 33, 0.9) 100%)',
+      glow: 'rgba(59, 130, 246, 0.3)',
+      border: 'rgba(59, 130, 246, 0.3)'
+    },
+    IMAGE: { 
+      gradient: 'linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(42, 36, 33, 0.9) 100%)',
+      glow: 'rgba(168, 85, 247, 0.3)',
+      border: 'rgba(168, 85, 247, 0.3)'
+    },
+    TWEET: { 
+      gradient: 'linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(42, 36, 33, 0.9) 100%)',
+      glow: 'rgba(14, 165, 233, 0.3)',
+      border: 'rgba(14, 165, 233, 0.3)'
+    },
+    ARTICLE: { 
+      gradient: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(42, 36, 33, 0.9) 100%)',
+      glow: 'rgba(245, 158, 11, 0.3)',
+      border: 'rgba(245, 158, 11, 0.3)'
+    },
+    NOTE: { 
+      gradient: 'linear-gradient(135deg, rgba(212, 175, 55, 0.2) 0%, rgba(42, 36, 33, 0.9) 100%)',
+      glow: 'rgba(212, 175, 55, 0.4)',
+      border: 'rgba(212, 175, 55, 0.4)'
+    },
+  };
+  return colors[type] || colors.NOTE;
+};
+
+const ContentCard: React.FC<ContentCardProps> = ({ node, onClick, index = 0 }) => {
+  const colors = getTypeColor(node.type);
+  
   return (
     <motion.div
       layoutId={`card-${node.id}`}
-      whileHover={{ scale: 1.02 }}
+      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+      animate={{ 
+        opacity: 1, 
+        y: 0, 
+        scale: 1,
+        transition: { delay: index * 0.05, duration: 0.3 }
+      }}
+      whileHover={{ 
+        scale: 1.03, 
+        y: -8,
+        boxShadow: `0 20px 40px ${colors.glow}`,
+        transition: { duration: 0.2 }
+      }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
-      className="group relative bg-white/5 backdrop-blur-md border border-white/10 hover:border-indigo-500/30 rounded-2xl p-4 cursor-pointer overflow-hidden transition-colors"
+      className="group relative cursor-pointer overflow-hidden rounded-2xl"
+      style={{
+        background: colors.gradient,
+        border: `1px solid ${colors.border}`,
+        minWidth: '280px',
+        maxWidth: '320px',
+        height: '200px',
+      }}
     >
-      {/* Hover Gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+      {/* Animated gradient overlay on hover */}
+      <motion.div 
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+        style={{
+          background: `radial-gradient(circle at 50% 0%, ${colors.glow} 0%, transparent 70%)`
+        }}
+      />
 
-      {/* Header */}
-      <div className="relative flex justify-between items-start mb-2">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-white/5 border border-white/5">
-            <TypeIcon type={node.type} />
-          </div>
-          {node.pinned && <Pin className="w-3 h-3 text-amber-400 rotate-45" />}
-        </div>
-        <span className="text-[10px] uppercase tracking-wider text-slate-500 font-medium">
-          {new Date(node.createdAt).toLocaleDateString()}
-        </span>
+      {/* Floating particles effect */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <motion.div
+          className="absolute w-2 h-2 rounded-full opacity-30"
+          style={{ background: 'var(--color-primary)', top: '20%', left: '10%' }}
+          animate={{ y: [-10, 10], opacity: [0.2, 0.5, 0.2] }}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          className="absolute w-1.5 h-1.5 rounded-full opacity-20"
+          style={{ background: 'var(--color-primary)', top: '60%', right: '15%' }}
+          animate={{ y: [10, -10], opacity: [0.1, 0.4, 0.1] }}
+          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+        />
       </div>
 
-      {/* Content */}
-      <div className="relative">
-        <h3 className="text-sm font-bold text-white mb-1 line-clamp-2 leading-tight group-hover:text-indigo-200 transition-colors">
-          {node.title}
-        </h3>
-        <p className="text-xs text-slate-400 line-clamp-3 mb-3">
-          {node.summary}
-        </p>
+      {/* Thumbnail overlay if available */}
+      {node.thumbnail && (
+        <div className="absolute inset-0">
+          <img 
+            src={node.thumbnail} 
+            alt=""
+            className="w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#2a2421] via-[#2a2421]/80 to-transparent" />
+        </div>
+      )}
 
-        {/* Tags */}
-        <div className="flex flex-wrap gap-1">
-          {node.tags.slice(0, 3).map(tag => (
-            <span key={tag} className="px-2 py-0.5 rounded-full bg-white/5 border border-white/5 text-[10px] text-slate-400">
-              #{tag}
-            </span>
-          ))}
-          {node.tags.length > 3 && (
-            <span className="px-2 py-0.5 text-[10px] text-slate-500">+{node.tags.length - 3}</span>
+      {/* Content */}
+      <div className="relative h-full flex flex-col p-5">
+        {/* Header */}
+        <div className="flex justify-between items-start mb-3">
+          <div className="flex items-center gap-2">
+            <motion.div 
+              className="p-2 rounded-xl"
+              style={{ 
+                background: 'rgba(255, 255, 255, 0.1)',
+                backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(255, 255, 255, 0.1)'
+              }}
+              whileHover={{ scale: 1.1, rotate: 5 }}
+            >
+              <TypeIcon type={node.type} />
+            </motion.div>
+            {node.pinned && (
+              <motion.div
+                initial={{ rotate: 0 }}
+                animate={{ rotate: 45 }}
+                className="text-amber-400"
+              >
+                <Pin className="w-4 h-4" />
+              </motion.div>
+            )}
+            {node.aiGenerated && (
+              <Sparkles className="w-3 h-3" style={{ color: 'var(--color-primary)' }} />
+            )}
+          </div>
+          <span 
+            className="text-[10px] uppercase tracking-wider font-medium px-2 py-1 rounded-full"
+            style={{ 
+              background: 'rgba(255, 255, 255, 0.05)',
+              color: 'var(--color-text-muted)'
+            }}
+          >
+            {new Date(node.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+          </span>
+        </div>
+
+        {/* Title & Summary */}
+        <div className="flex-1">
+          <h3 
+            className="text-base font-bold mb-2 line-clamp-2 leading-snug group-hover:text-[var(--color-primary)] transition-colors"
+            style={{ color: 'var(--color-text-light)' }}
+          >
+            {node.title}
+          </h3>
+          <p 
+            className="text-xs line-clamp-2 leading-relaxed"
+            style={{ color: 'var(--color-text-muted)' }}
+          >
+            {node.summary}
+          </p>
+        </div>
+
+        {/* Footer - Tags */}
+        <div className="flex items-center justify-between mt-3">
+          <div className="flex flex-wrap gap-1.5">
+            {node.tags.slice(0, 2).map(tag => (
+              <span 
+                key={tag} 
+                className="px-2 py-0.5 rounded-full text-[10px] font-medium"
+                style={{ 
+                  background: 'rgba(212, 175, 55, 0.1)',
+                  border: '1px solid rgba(212, 175, 55, 0.2)',
+                  color: 'var(--color-primary)'
+                }}
+              >
+                #{tag}
+              </span>
+            ))}
+            {node.tags.length > 2 && (
+              <span className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
+                +{node.tags.length - 2}
+              </span>
+            )}
+          </div>
+
+          {/* External Link Action */}
+          {node.url && (
+            <motion.a
+              href={node.url}
+              target="_blank"
+              rel="noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all"
+              style={{ 
+                background: 'rgba(212, 175, 55, 0.2)',
+              }}
+              whileHover={{ scale: 1.2, background: 'rgba(212, 175, 55, 0.4)' }}
+              whileTap={{ scale: 0.9 }}
+            >
+              <ExternalLink className="w-3 h-3" style={{ color: 'var(--color-primary)' }} />
+            </motion.a>
           )}
         </div>
       </div>
 
-      {/* External Link Action */}
-      {node.url && (
-        <a
-          href={node.url}
-          target="_blank"
-          rel="noreferrer"
-          onClick={(e) => e.stopPropagation()}
-          className="absolute bottom-4 right-4 p-1.5 rounded-full bg-indigo-500/20 text-indigo-300 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-indigo-500 hover:text-white"
-        >
-          <ExternalLink className="w-3 h-3" />
-        </a>
-      )}
+      {/* Bottom shine effect on hover */}
+      <motion.div
+        className="absolute bottom-0 left-0 right-0 h-1 opacity-0 group-hover:opacity-100 transition-opacity"
+        style={{ background: 'var(--gradient-gold)' }}
+      />
     </motion.div>
   );
 };
 
 export default ContentCard;
+

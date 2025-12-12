@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom/client';
 import '../index.css';
 import { Space, Node, NodeType } from '../types';
 import { getSpaces, createNode, createSpace } from '../services/dataService';
-import { generateTags } from '../services/geminiService';
 import { Zap, Plus, ExternalLink, Check, Image, Video, FileText, Link as LinkIcon, Sparkles, Globe, BookOpen, Bookmark, X, ArrowLeft, Loader2 } from 'lucide-react';
 
 interface CaptureData {
@@ -105,7 +104,7 @@ const Popup = () => {
                     summary: selection ? selection.substring(0, 200) : `Saved from ${new URL(currentTab?.url || '').hostname}`,
                     content: selection || currentTab?.url || '',
                     url: currentTab?.url,
-                    tags: await generateTags(currentTab?.title || 'Untitled', selection || currentTab?.url || ''),
+                    tags: ['Quick Save'],
                     createdAt: new Date().toISOString(),
                     status: 'new',
                     pinned: false,
@@ -171,10 +170,10 @@ const Popup = () => {
 
     if (savedStatus) {
         return (
-            <div className="w-[420px] h-[240px] flex items-center justify-center relative overflow-hidden" style={{ background: 'var(--gradient-dark)' }}>
+            <div className="w-[420px] h-[240px] bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 flex items-center justify-center relative overflow-hidden">
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-indigo-500/20 via-transparent to-transparent" />
                 <div className="relative text-center animate-in fade-in zoom-in duration-300">
-                    <div className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center shadow-2xl animate-pulse-gold" style={{ background: 'var(--gradient-gold)', boxShadow: 'var(--shadow-gold-lg)' }}>
+                    <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 flex items-center justify-center shadow-2xl shadow-emerald-500/50 animate-pulse">
                         <Check className="w-10 h-10 text-white" strokeWidth={3} />
                     </div>
                     <p className="text-2xl font-bold text-white mb-2">{savedStatus.includes('✓') ? 'Saved!' : 'Error'}</p>
@@ -185,7 +184,7 @@ const Popup = () => {
     }
 
     return (
-        <div className="w-[420px] h-[580px] overflow-hidden flex flex-col relative" style={{ background: 'var(--gradient-dark)', color: 'var(--color-text-light)' }}>
+        <div className="w-[420px] h-[580px] bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white overflow-hidden flex flex-col relative">
             {/* Animated Background */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute top-[-50%] right-[-50%] w-full h-full bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-full blur-3xl animate-spin-slow" />
@@ -226,7 +225,7 @@ const Popup = () => {
                 {/* Current Tab Info */}
                 {currentTab && view === 'main' && (
                     <div className="flex items-center gap-2 text-xs text-slate-300 bg-white/5 rounded-lg px-3 py-2 backdrop-blur-sm border border-white/10">
-                        <Globe className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--color-secondary)' }} />
+                        <Globe className="w-3.5 h-3.5 flex-shrink-0 text-indigo-400" />
                         <span className="truncate flex-1">{currentTab.title}</span>
                     </div>
                 )}
@@ -239,7 +238,7 @@ const Popup = () => {
                     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
                         <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10">
                             <div className="flex items-start gap-3 mb-4">
-                                <div className="p-2.5 rounded-xl border transition-all duration-300" style={{ background: 'rgba(212, 175, 55, 0.15)', borderColor: 'var(--color-border-gold)' }}>
+                                <div className="p-2.5 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-xl border border-indigo-500/30">
                                     {getTypeIcon(pendingCapture.nodeType)}
                                 </div>
                                 <div className="flex-1 min-w-0">
@@ -271,7 +270,7 @@ const Popup = () => {
                                         disabled={loading}
                                         className="w-full flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all group border border-white/10 hover:border-indigo-500/50"
                                     >
-                                        <div className="w-8 h-8 rounded-lg flex items-center justify-center text-base transition-all duration-300" style={{ background: 'var(--gradient-gold)', boxShadow: 'var(--shadow-gold)' }}>
+                                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-base shadow-lg">
                                             {space.icon}
                                         </div>
                                         <span className="flex-1 text-left text-sm font-medium">{space.name}</span>
@@ -286,9 +285,9 @@ const Popup = () => {
                 {/* Create Space View */}
                 {view === 'create' && (
                     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
-                        <div className="backdrop-blur-sm rounded-2xl p-6 border transition-all duration-300" style={{ background: 'rgba(212, 175, 55, 0.1)', borderColor: 'var(--color-border-gold)' }}>
+                        <div className="bg-gradient-to-br from-indigo-500/10 to-purple-500/10 backdrop-blur-sm rounded-2xl p-6 border border-indigo-500/30">
                             <div className="text-center mb-6">
-                                <div className="w-16 h-16 mx-auto mb-3 rounded-2xl flex items-center justify-center animate-pulse-gold" style={{ background: 'var(--gradient-gold)', boxShadow: 'var(--shadow-gold-lg)' }}>
+                                <div className="w-16 h-16 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-xl shadow-indigo-500/30">
                                     <Sparkles className="w-8 h-8" />
                                 </div>
                                 <h2 className="text-lg font-bold mb-1">Create New Space</h2>
@@ -349,9 +348,9 @@ const Popup = () => {
                                         className="w-full group relative overflow-hidden"
                                         style={{ animationDelay: `${idx * 50}ms` }}
                                     >
-                                        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl" style={{ background: 'radial-gradient(circle, rgba(212,175,55,0.2) 0%, transparent 70%)' }} />
+                                        <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl" />
                                         <div className="relative flex items-center gap-3 p-3.5 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/10 hover:border-indigo-500/50">
-                                            <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shadow-lg group-hover:scale-110 transition-transform" style={{ background: 'var(--gradient-gold)' }}>
+                                            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-xl shadow-lg group-hover:scale-110 transition-transform">
                                                 {space.icon}
                                             </div>
                                             <div className="flex-1 text-left min-w-0">

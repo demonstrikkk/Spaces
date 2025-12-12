@@ -6,6 +6,6 @@ export const getEnv = (key: string): string | undefined => {
         const stored = localStorage.getItem(`ENV_${key}`);
         if (stored) return stored;
     }
-    // Fallback to .env (Vite injects these)
-    return import.meta.env[`VITE_${key}`];
+    // Fallback to .env (Vite injects these) - key should already have VITE_ prefix
+    return import.meta.env[key];
 };

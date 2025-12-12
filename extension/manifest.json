@@ -1,30 +1,50 @@
 {
   "manifest_version": 3,
   "name": "Spaces - AI Second Brain",
-  "version": "1.0",
-  "description": "Capture, organize, and chat with your knowledge.",
+  "version": "2.0",
+  "description": "Capture, organize, and chat with your knowledge. Right-click to save anything!",
   "permissions": [
     "contextMenus",
     "storage",
     "activeTab",
-    "scripting"
+    "scripting",
+    "notifications",
+    "tabs"
+  ],
+  "host_permissions": [
+    "<all_urls>"
   ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "extension/background.js",
+    "type": "module"
   },
   "action": {
     "default_popup": "extension/popup.html",
-    "default_title": "Spaces"
+    "default_title": "Spaces - Save to your Second Brain",
+    "default_icon": {
+      "16": "extension/icon.svg",
+      "48": "extension/icon.svg",
+      "128": "extension/icon.svg"
+    }
+  },
+  "icons": {
+    "16": "extension/icon.svg",
+    "48": "extension/icon.svg",
+    "128": "extension/icon.svg"
   },
   "web_accessible_resources": [
     {
       "resources": [
         "index.html",
-        "assets/*"
+        "assets/*",
+        "extension/icon.svg"
       ],
       "matches": [
         "<all_urls>"
       ]
     }
-  ]
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+  }
 }

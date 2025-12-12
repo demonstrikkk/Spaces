@@ -14,17 +14,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
 
     useEffect(() => {
         // Load existing keys (masking sensitive parts)
-        setGeminiKey(localStorage.getItem('ENV_GEMINI_API_KEY') || '');
-        setSupabaseUrl(localStorage.getItem('ENV_SUPABASE_URL') || '');
-        setSupabaseKey(localStorage.getItem('ENV_SUPABASE_ANON_KEY') || '');
+        setGeminiKey(localStorage.getItem('ENV_VITE_GEMINI_API_KEY') || '');
+        setSupabaseUrl(localStorage.getItem('ENV_VITE_SUPABASE_URL') || '');
+        setSupabaseKey(localStorage.getItem('ENV_VITE_SUPABASE_ANON_KEY') || '');
     }, []);
 
     const handleSave = () => {
         setStatus('saving');
         // Save to localStorage so env.ts helper can pick them up
-        if (geminiKey) localStorage.setItem('ENV_GEMINI_API_KEY', geminiKey);
-        if (supabaseUrl) localStorage.setItem('ENV_SUPABASE_URL', supabaseUrl);
-        if (supabaseKey) localStorage.setItem('ENV_SUPABASE_ANON_KEY', supabaseKey);
+        if (geminiKey) localStorage.setItem('ENV_VITE_GEMINI_API_KEY', geminiKey);
+        if (supabaseUrl) localStorage.setItem('ENV_VITE_SUPABASE_URL', supabaseUrl);
+        if (supabaseKey) localStorage.setItem('ENV_VITE_SUPABASE_ANON_KEY', supabaseKey);
 
         setTimeout(() => {
             setStatus('saved');

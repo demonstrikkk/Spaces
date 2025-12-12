@@ -8,7 +8,7 @@ const MODEL_NAME = 'gemini-2.5-flash';
 
 const getAiClient = (): GoogleGenAI | null => {
   if (ai) return ai;
-  const apiKey = getEnv('GEMINI_API_KEY');
+  const apiKey = getEnv('VITE_GEMINI_API_KEY');
   if (!apiKey || apiKey.trim() === '') {
     return null;
   }
@@ -179,5 +179,56 @@ export const analyzeContentWithGemini = async (input: string): Promise<Partial<N
   } catch (error) {
     console.error("Analysis Error:", error);
     return { title: 'Analysis Failed', summary: input.substring(0, 50), tags: ['Error'], type: NodeType.NOTE };
+  }
+};
+
+/**
+ * Auto-generate tags for content using AI
+ */
+export const generateTags = async (title: string, content: string): Promise<string[]> => {
+  const client = getAiClient();
+  if (!client) {
+    return ['Untagged'];
+  }
+
+  try {
+    const prompt = `Analyze this content and generate 3-5 relevant, specific tags.
+
+Title: ${title}
+Content: ${content.substring(0, 500)}
+
+Generate tags that are:
+- Specific and descriptive
+- Relevant to the content
+- Useful for organization
+- Professional and concise
+
+Return ONLY a JSON array of strings, nothing else.
+Example: ["JavaScript", "React Hooks", "Frontend Development"]`;
+
+    const response = await client.models.generateContent({
+      model: MODEL_NAME,
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      config: {
+        temperature: 0.3,
+        maxOutputTokens: 200,
+        responseMimeType: "application/json"
+      }
+    });
+
+    if (response.text) {
+      const tags = JSON.parse(response.text);
+      if (Array.isArray(tags) && tags.length > 0) {
+        return tags.slice(0, 5); // Max 5 tags
+      }
+    }
+    
+    // Fallback to simple keyword extraction
+    const words = `${title} ${content}`.toLowerCase().split(/\s+/);
+    const uniqueWords = [...new Set(words)].filter(w => w.length > 4);
+    return uniqueWords.slice(0, 3);
+  } catch (error) {
+    console.error("Tag generation error:", error);
+    return ['General'];
   }
 };
