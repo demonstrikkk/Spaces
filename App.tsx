@@ -4,6 +4,7 @@ import { getSpaces, getNodesForSpace, createSpace } from './services/dataService
 import SpaceDeck from './components/SpaceDeck';
 import ExtensionPreview from './components/ExtensionPreview';
 import SettingsModal from './components/SettingsModal';
+import HomePage from './components/HomePage';
 import { Plus, Settings, Zap, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -14,6 +15,7 @@ function App() {
     const [loading, setLoading] = useState(true);
     const [showSettings, setShowSettings] = useState(false);
     const [isExtensionCtx, setIsExtensionCtx] = useState(false);
+    const [showHomePage, setShowHomePage] = useState(true);
 
     useEffect(() => {
         loadSpaces();
@@ -74,6 +76,11 @@ function App() {
 
     const activeSpace = spaces.find(s => s.id === activeSpaceId);
 
+    // Show homepage for first-time visitors or if explicitly shown
+   if (showHomePage && !isExtensionCtx) {
+        return <HomePage onGetStarted={() => setShowHomePage(false)} />;
+    }
+
     return (
         <div className="min-h-screen font-sans selection:bg-yellow-500/20" style={{ background: 'var(--color-background)', color: 'var(--color-text-light)' }}>
             {/* Background Effects */}
@@ -100,6 +107,19 @@ function App() {
                             <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-medium border border-emerald-500/20">
                                 ● Synced
                             </span>
+                        )}
+                        {!isExtensionCtx && spaces.length > 0 && (
+                            <button
+                                onClick={() => setShowHomePage(true)}
+                                className="px-4 py-2 rounded-xl text-sm font-medium transition-all hover:scale-105"
+                                style={{ 
+                                    background: 'rgba(212, 175, 55, 0.1)',
+                                    border: '1px solid rgba(212, 175, 55, 0.3)',
+                                    color: 'var(--color-primary)'
+                                }}
+                            >
+                                View Landing
+                            </button>
                         )}
                         <button
                             onClick={() => setShowSettings(true)}

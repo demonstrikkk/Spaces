@@ -376,6 +376,72 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Scroll snap for sections */
+.snap-section {
+  scroll-snap-type: y mandatory;
+  scroll-padding-top: 80px;
+}
+
+.snap-section > section {
+  scroll-snap-align: start;
+}
+
+/* Gradient text animation */
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 3s ease infinite;
+}
+
+/* Floating badge animation */
+@keyframes badge-float {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-4px) scale(1.02);
+  }
+}
+
+.badge-float {
+  animation: badge-float 3s ease-in-out infinite;
+}
+
+/* Shine effect for buttons */
+@keyframes shine-sweep {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.btn-shine {
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shine-sweep 3s infinite;
+}
+
+/* Parallax smooth */
+.parallax {
+  will-change: transform;
+  transform: translateZ(0);
+}
+
 body {
   @apply overflow-x-hidden;
   background: var(--color-background);
